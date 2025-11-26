@@ -1,6 +1,10 @@
 'use client';
 
+import { useRouter } from "next/navigation";
+
 export default function LoginPage() {
+  const router = useRouter();
+
   function login() {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     const redirectUri = "http://localhost:3000/oauth/callback";
@@ -17,9 +21,15 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ padding: 30 }}>
-      <h1>Login</h1>
-      <button onClick={login}>Login with Google</button>
+    <div className="flex flex-col items-center gap-6 bg-[#050505] p-10 rounded-xl shadow-xl">
+      <h1 className="text-3xl font-semibold mb-4">Sign in to E2EE Drive</h1>
+
+      <button
+        onClick={login}
+        className="bg-white text-black px-6 py-3 rounded-full font-medium hover:bg-gray-200 transition"
+      >
+        Sign in with Google
+      </button>
     </div>
   );
 }
