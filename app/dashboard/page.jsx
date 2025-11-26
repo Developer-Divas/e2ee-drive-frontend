@@ -92,7 +92,7 @@ export default function Dashboard() {
       <Breadcrumb items={breadcrumb} onNavigate={handleBreadcrumbClick} />
 
       {/* Folder Grid */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="mt-6 grid grid-cols-3 gap-6">
         {folders.map(f => (
           <FolderCard key={f.id} folder={f} onOpen={openFolder} />
         ))}
