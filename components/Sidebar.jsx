@@ -13,7 +13,7 @@ export default function Sidebar() {
 
         <nav className="flex flex-col gap-2">
           <button
-            onClick={() => r.push("/dashboard")}
+            onClick={() => r.push(`/dashboard?root=${Date.now()}`)}
             className="text-left py-2 px-3 rounded-md hover:bg-[rgba(255,255,255,0.02)]"
           >
             📁 Root

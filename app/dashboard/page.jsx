@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { logout } from '@/lib/auth';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import FolderCard from '@/components/FolderCard';
 import CreateFolderModal from '@/components/CreateFolderModal';
 import Breadcrumb from '@/components/Breadcrumb';
@@ -58,17 +58,27 @@ export default function Dashboard() {
   // ---------------------------
   // On Mount
   // ---------------------------
-  useEffect(() => {
+
+const searchParams = useSearchParams();
+const rootParam = searchParams.get("root");
+
+
+useEffect(() => {
+  // If root button clicked → load root
+  if (rootParam) {
+    console.log("ROOT TRIGGERED →", rootParam);
     loadFolder(null);
+    return;
+  }
 
-    // Modal event listener
-    function open() {
-      setShowCreate(true);
-    }
+  // IF NO root param AND no folder loaded yet → load root once
+  if (currentFolderId === null && folders.length === 0) {
+    console.log("INITIAL LOAD → ROOT");
+    loadFolder(null);
+  }
+}, [rootParam]);
 
-    window.addEventListener("open-create-folder", open);
-    return () => window.removeEventListener("open-create-folder", open);
-  }, []);
+
 
   // ---------------------------
   // Create folder
