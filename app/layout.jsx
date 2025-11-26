@@ -1,17 +1,13 @@
+import "./globals.css";
+
 export const metadata = {
-  title: "Login",
-  description: "Google login page",
+  title: "E2EE Drive",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>
-        <script
-          src="https://accounts.google.com/gsi/client"
-          async
-          defer
-        ></script>
+      <body className="bg-[#050505] text-white">
         {children}
       </body>
     </html>

@@ -4,116 +4,107 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import { logout } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
+import FolderCard from '@/components/FolderCard';
+import CreateFolderModal from '@/components/CreateFolderModal';
+import Breadcrumb from '@/components/Breadcrumb';
 
 export default function Dashboard() {
   const r = useRouter();
+
   const [folders, setFolders] = useState([]);
-  const [newFolder, setNewFolder] = useState('');
-  const [parentId, setParentId] = useState(null);
-  const [path, setPath] = useState([]); // <-- breadcrumb path
+  const [breadcrumb, setBreadcrumb] = useState([]);
+  const [currentFolderId, setCurrentFolderId] = useState(null);
+  const [showCreate, setShowCreate] = useState(false);
 
-  async function load(pid = null, newPath = null) {
+  // ---------------------------
+  // Load folder + build breadcrumb
+  // ---------------------------
+  async function loadFolder(folderId = null) {
     try {
-      const data = await api.getFolders(pid);
-      setFolders(data);
-      setParentId(pid);
+      const data = await api.getFolders(folderId);
 
-      if (newPath !== null) setPath(newPath);
-    } catch (e) {
+      console.log("FOLDER RESPONSE:", data);
+      // Build breadcrumb array
+      let bc = [{ id: null, name: "Root" }];
+
+      // If backend returns parent chain, adjust name
+      if (data.path || data.parent_chain) {
+        const chain = data.path ?? data.parent_chain;
+
+        chain.forEach(p => {
+          bc.push({
+            id: p.id,
+            name: p.name
+          });
+        });
+      }
+
+      setBreadcrumb(bc);
+      setFolders(data.folders || data); // adjust depending backend
+      setCurrentFolderId(folderId);
+    } catch (err) {
+      console.error(err);
       r.push('/login');
     }
   }
 
-  // When clicking folder:
-  async function openFolder(folder) {
-    const updatedPath = [...path, { id: folder.id, name: folder.name }];
-    await load(folder.id, updatedPath);
+  // ---------------------------
+  // Breadcrumb click handler
+  // ---------------------------
+  function handleBreadcrumbClick(folderId) {
+    loadFolder(folderId);
   }
 
-  // Clicking breadcrumb:
-  async function goToLevel(idx) {
-    if (idx === -1) {
-      load(null, []);
-      return;
+  // ---------------------------
+  // On Mount
+  // ---------------------------
+  useEffect(() => {
+    loadFolder(null);
+
+    // Modal event listener
+    function open() {
+      setShowCreate(true);
     }
 
-    const level = path[idx];
-    const newPath = path.slice(0, idx + 1);
-    await load(level.id, newPath);
-  }
-
-  useEffect(() => {
-    load(null, []);
+    window.addEventListener("open-create-folder", open);
+    return () => window.removeEventListener("open-create-folder", open);
   }, []);
 
+  // ---------------------------
+  // Create folder
+  // ---------------------------
+  async function createFolder(name) {
+    await api.createFolder(name, currentFolderId);
+    setShowCreate(false);
+    loadFolder(currentFolderId);
+  }
+
+  // ---------------------------
+  // Open folder
+  // ---------------------------
+  function openFolder(folder) {
+    loadFolder(folder.id);
+  }
+
   return (
-    <div style={{ padding: 30 }}>
-      <h1>Dashboard</h1>
+    <div>
+      {/* Breadcrumb */}
+      <Breadcrumb items={breadcrumb} onNavigate={handleBreadcrumbClick} />
 
-      <button
-        onClick={() => {
-          logout();
-          r.push('/login');
-        }}
-      >
-        Logout
-      </button>
-
-      {/* BREADCRUMB */}
-      <div style={{ margin: "20px 0", fontSize: "18px" }}>
-        <span
-          style={{ cursor: "pointer", color: "blue" }}
-          onClick={() => goToLevel(-1)}
-        >
-          Root
-        </span>
-
-        {path.map((p, i) => (
-          <span key={p.id}>
-            {" / "}
-            <span
-              style={{ cursor: "pointer", color: "blue" }}
-              onClick={() => goToLevel(i)}
-            >
-              {p.name}
-            </span>
-          </span>
+      {/* Folder Grid */}
+      <div className="mt-6 grid grid-cols-3 gap-6">
+        {folders.map(f => (
+          <FolderCard key={f.id} folder={f} onOpen={openFolder} />
         ))}
       </div>
 
-      {/* CREATE FOLDER */}
-      <div style={{ marginBottom: 20 }}>
-        <input
-          value={newFolder}
-          onChange={(e) => setNewFolder(e.target.value)}
+      {/* Modal */}
+      {showCreate && (
+        <CreateFolderModal
+          onCreate={createFolder}
+          onClose={() => setShowCreate(false)}
         />
-        <button
-          onClick={async () => {
-            await api.createFolder(newFolder, parentId);
-            setNewFolder('');
-            load(parentId, path);
-          }}
-        >
-          Create
-        </button>
-      </div>
-
-      {/* LIST OF FOLDERS */}
-      <ul>
-        {folders.map((f) => (
-          <li
-            key={f.id}
-            style={{
-              cursor: 'pointer',
-              padding: 5,
-              borderBottom: '1px solid #ccc',
-            }}
-            onClick={() => openFolder(f)}
-          >
-            📁 {f.name}
-          </li>
-        ))}
-      </ul>
+      )}
     </div>
   );
 }

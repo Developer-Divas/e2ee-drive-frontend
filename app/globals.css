@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* custom base */
+:root{
+  --bg:#0b1020;
+  --surface:#0f1724;
+  --muted:#9aa4b2;
+  --accent:#6ee7b7;
+  --card:#111827;
+  --glass: rgba(255,255,255,0.03);
+}
+
+html,body,#__next {
+  height:100%;
+}
+
+body{
+  @apply bg-bg text-white antialiased;
+  background: linear-gradient(180deg,#04050a 0%, var(--bg) 100%);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+/* small helpers */
+.card {
+  @apply bg-card rounded-xl p-4 shadow-soft;
+  border: 1px solid rgba(255,255,255,0.03);
+}
+.btn {
+  @apply inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium bg-[rgba(255,255,255,0.03)];
+}
+.input {
+  @apply bg-surface border border-[rgba(255,255,255,0.04)] text-sm rounded-md px-3 py-2;
+}
