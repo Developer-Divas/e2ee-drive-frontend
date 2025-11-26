@@ -1,8 +1,18 @@
 'use client';
 
+import { logout } from "@/lib/auth";
+import { useRouter } from "next/navigation";
+
 export default function Navbar() {
+  const r = useRouter();
+
   function openModal() {
     window.dispatchEvent(new CustomEvent("open-create-folder"));
+  }
+
+  async function handleLogout() {
+    await logout();  // your logout function
+    r.push("/login");
   }
 
   return (
@@ -16,10 +26,20 @@ export default function Navbar() {
 
       <div className="flex items-center gap-3">
         <button
-          onClick={openModal}
-          className="btn border border-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.05)]"
-        >
+          onClick={() => {
+            openModal();
+          }}
+          className="px-3 py-1.5 rounded-md border border-blue-400/40 text-blue-300 
+             hover:bg-blue-400/10 hover:border-blue-400/60 transition">
           + New Folder
+        </button>
+
+        {/* 🔥 SIGN OUT BUTTON */}
+        <button
+          onClick={handleLogout}
+          className="px-3 py-1.5 rounded-md border border-red-500/40 text-red-300 hover:bg-red-500/10 hover:text-red-200 transition"
+        >
+          Sign Out
         </button>
       </div>
     </header>
