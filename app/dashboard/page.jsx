@@ -6,67 +6,105 @@ import { logout } from '@/lib/auth';
 import { useRouter } from 'next/navigation';
 import FolderCard from '@/components/FolderCard';
 import CreateFolderModal from '@/components/CreateFolderModal';
+import Breadcrumb from '@/components/Breadcrumb';
 
 export default function Dashboard() {
   const r = useRouter();
+
   const [folders, setFolders] = useState([]);
-  const [parentId, setParentId] = useState(null);
-  const [path, setPath] = useState([]);
+  const [breadcrumb, setBreadcrumb] = useState([]);
+  const [currentFolderId, setCurrentFolderId] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
 
-  async function load(pid = null, newPath = null) {
+  // ---------------------------
+  // Load folder + build breadcrumb
+  // ---------------------------
+  async function loadFolder(folderId = null) {
     try {
-      const data = await api.getFolders(pid);
-      setFolders(data || []);
-      setParentId(pid);
-      if (newPath !== null) setPath(newPath);
-    } catch (e) {
+      const data = await api.getFolders(folderId);
+
+      console.log("FOLDER RESPONSE:", data);
+      // Build breadcrumb array
+      let bc = [{ id: null, name: "Root" }];
+
+      // If backend returns parent chain, adjust name
+      if (data.path || data.parent_chain) {
+        const chain = data.path ?? data.parent_chain;
+
+        chain.forEach(p => {
+          bc.push({
+            id: p.id,
+            name: p.name
+          });
+        });
+      }
+
+      setBreadcrumb(bc);
+      setFolders(data.folders || data); // adjust depending backend
+      setCurrentFolderId(folderId);
+    } catch (err) {
+      console.error(err);
       r.push('/login');
     }
   }
 
-  useEffect(() => {
-    load(null, []);
-    function handler() {
-      setShowCreate(true);
-    }
-    window.addEventListener('open-create-folder', handler);
-    return () => window.removeEventListener('open-create-folder', handler);
-  }, []);
-
-  async function openFolder(folder) {
-    const updatedPath = [...path, { id: folder.id, name: folder.name }];
-    await load(folder.id, updatedPath);
+  // ---------------------------
+  // Breadcrumb click handler
+  // ---------------------------
+  function handleBreadcrumbClick(folderId) {
+    loadFolder(folderId);
   }
 
+  // ---------------------------
+  // On Mount
+  // ---------------------------
+  useEffect(() => {
+    loadFolder(null);
+
+    // Modal event listener
+    function open() {
+      setShowCreate(true);
+    }
+
+    window.addEventListener("open-create-folder", open);
+    return () => window.removeEventListener("open-create-folder", open);
+  }, []);
+
+  // ---------------------------
+  // Create folder
+  // ---------------------------
   async function createFolder(name) {
-    await api.createFolder(name, parentId);
+    await api.createFolder(name, currentFolderId);
     setShowCreate(false);
-    load(parentId, path);
+    loadFolder(currentFolderId);
+  }
+
+  // ---------------------------
+  // Open folder
+  // ---------------------------
+  function openFolder(folder) {
+    loadFolder(folder.id);
   }
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <div className="text-muted text-sm">Path</div>
-          <div className="text-lg font-semibold">
-            Root{path.map(p => ` / ${p.name}`)}
-          </div>
-        </div>
+      {/* Breadcrumb */}
+      <Breadcrumb items={breadcrumb} onNavigate={handleBreadcrumbClick} />
 
-        <div className="flex items-center gap-3">
-          <button className="btn" onClick={() => { logout(); r.push('/login'); }}>Logout</button>
-        </div>
-      </div>
-
+      {/* Folder Grid */}
       <div className="grid grid-cols-3 gap-4">
         {folders.map(f => (
           <FolderCard key={f.id} folder={f} onOpen={openFolder} />
         ))}
       </div>
 
-      {showCreate && <CreateFolderModal onCreate={createFolder} onClose={() => setShowCreate(false)} />}
+      {/* Modal */}
+      {showCreate && (
+        <CreateFolderModal
+          onCreate={createFolder}
+          onClose={() => setShowCreate(false)}
+        />
+      )}
     </div>
   );
 }
