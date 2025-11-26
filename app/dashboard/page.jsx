@@ -9,21 +9,41 @@ export default function Dashboard() {
   const r = useRouter();
   const [folders, setFolders] = useState([]);
   const [newFolder, setNewFolder] = useState('');
-  const [parentId, setParentId] = useState(null); // <-- track current folder
+  const [parentId, setParentId] = useState(null);
+  const [path, setPath] = useState([]); // <-- breadcrumb path
 
-  async function load(pid = null) {
+  async function load(pid = null, newPath = null) {
     try {
       const data = await api.getFolders(pid);
       setFolders(data);
       setParentId(pid);
+
+      if (newPath !== null) setPath(newPath);
     } catch (e) {
-      console.error(e);
       r.push('/login');
     }
   }
 
+  // When clicking folder:
+  async function openFolder(folder) {
+    const updatedPath = [...path, { id: folder.id, name: folder.name }];
+    await load(folder.id, updatedPath);
+  }
+
+  // Clicking breadcrumb:
+  async function goToLevel(idx) {
+    if (idx === -1) {
+      load(null, []);
+      return;
+    }
+
+    const level = path[idx];
+    const newPath = path.slice(0, idx + 1);
+    await load(level.id, newPath);
+  }
+
   useEffect(() => {
-    load(null);
+    load(null, []);
   }, []);
 
   return (
@@ -39,13 +59,30 @@ export default function Dashboard() {
         Logout
       </button>
 
-      {parentId !== null && (
-        <button onClick={() => load(null)} style={{ marginLeft: 20 }}>
-          ⬅ Back
-        </button>
-      )}
+      {/* BREADCRUMB */}
+      <div style={{ margin: "20px 0", fontSize: "18px" }}>
+        <span
+          style={{ cursor: "pointer", color: "blue" }}
+          onClick={() => goToLevel(-1)}
+        >
+          Root
+        </span>
 
-      <div style={{ marginTop: 20 }}>
+        {path.map((p, i) => (
+          <span key={p.id}>
+            {" / "}
+            <span
+              style={{ cursor: "pointer", color: "blue" }}
+              onClick={() => goToLevel(i)}
+            >
+              {p.name}
+            </span>
+          </span>
+        ))}
+      </div>
+
+      {/* CREATE FOLDER */}
+      <div style={{ marginBottom: 20 }}>
         <input
           value={newFolder}
           onChange={(e) => setNewFolder(e.target.value)}
@@ -54,23 +91,24 @@ export default function Dashboard() {
           onClick={async () => {
             await api.createFolder(newFolder, parentId);
             setNewFolder('');
-            load(parentId);
+            load(parentId, path);
           }}
         >
           Create
         </button>
       </div>
 
-      <ul style={{ marginTop: 20 }}>
+      {/* LIST OF FOLDERS */}
+      <ul>
         {folders.map((f) => (
           <li
             key={f.id}
             style={{
               cursor: 'pointer',
               padding: 5,
-              borderBottom: '1px solid #ccc'
+              borderBottom: '1px solid #ccc',
             }}
-            onClick={() => load(f.id)} // <-- CLICK loads subfolders
+            onClick={() => openFolder(f)}
           >
             📁 {f.name}
           </li>
