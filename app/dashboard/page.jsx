@@ -8,6 +8,7 @@ import FolderCard from '@/components/FolderCard';
 import CreateFolderModal from '@/components/CreateFolderModal';
 import Breadcrumb from '@/components/Breadcrumb';
 import UploadFileModal from '@/components/UploadFileModal';
+import FileCard from '@/components/FileCard';
 
 export default function Dashboard() {
   const r = useRouter();
@@ -108,6 +109,23 @@ export default function Dashboard() {
     loadFolder(folder.id);
   }
 
+  async function handleDownload(file) {
+    await api.downloadFile(file.name);
+  }
+
+  async function handleDelete(file) {
+    await api.deleteFile(file.name);
+    loadFolder(currentFolderId);
+  }
+
+  async function handleRename(file) {
+    const newName = prompt("Enter new file name:", file.name);
+    if (!newName) return;
+    await api.renameFile(file.name, newName);
+    loadFolder(currentFolderId);
+  }
+
+
   async function uploadFile(file) {
     try {
       const form = new FormData();
@@ -134,14 +152,21 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="mt-10 grid grid-cols-3 gap-6">
-        {files.map(f => (
-          <div key={f.name} className="p-4 bg-white/5 border border-white/10 rounded-lg">
-            <div className="text-4xl">📄</div>
-            <div className="truncate mt-2">{f.name}</div>
-          </div>
-        ))}
-      </div>
+      {/* Files section */}
+      {files.length > 0 && (
+        <div className="mt-10 grid grid-cols-3 gap-6">
+          {files.map(f => (
+            <FileCard
+              file={f}
+              onOpen={() => console.log("OPEN", f)}
+              onDownload={handleDownload}
+              onDelete={handleDelete}
+              onRename={handleRename}
+            />
+
+          ))}
+        </div>
+      )}
 
       {showCreate && (
         <CreateFolderModal
