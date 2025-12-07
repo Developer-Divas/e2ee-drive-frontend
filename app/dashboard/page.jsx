@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import FolderCard from '@/components/FolderCard';
 import CreateFolderModal from '@/components/CreateFolderModal';
 import Breadcrumb from '@/components/Breadcrumb';
+import UploadFileModal from '@/components/UploadFileModal';
 
 export default function Dashboard() {
   const r = useRouter();
@@ -17,6 +18,9 @@ export default function Dashboard() {
   const [breadcrumb, setBreadcrumb] = useState([]);
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+  const [files, setFiles] = useState([]);
+
 
   // ---------------------------
   // Load folder + breadcrumb
@@ -39,6 +43,7 @@ export default function Dashboard() {
 
       setBreadcrumb(bc);
       setFolders(data.folders || data);
+      setFiles(data.files || []);
       setCurrentFolderId(folderId);
     } catch (err) {
       console.error(err);
@@ -75,6 +80,18 @@ export default function Dashboard() {
     loadFolder(null);
   }, []);
 
+
+  useEffect(() => {
+    function openUpload() {
+      console.log("UPLOAD MODAL OPENED");
+      setShowUpload(true);
+    }
+
+    window.addEventListener("open-upload-file", openUpload);
+    return () => window.removeEventListener("open-upload-file", openUpload);
+  }, []);
+
+
   // ---------------------------
   // Create folder
   // ---------------------------
@@ -91,6 +108,22 @@ export default function Dashboard() {
     loadFolder(folder.id);
   }
 
+  async function uploadFile(file) {
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("folder_id", currentFolderId);
+
+      await api.uploadFile(form);
+
+      setShowUpload(false);
+      loadFolder(currentFolderId); // refresh after upload
+    } catch (err) {
+      console.error("UPLOAD ERROR →", err);
+    }
+  }
+
+
   return (
     <div>
       <Breadcrumb items={breadcrumb} onNavigate={handleBreadcrumbClick} />
@@ -101,12 +134,29 @@ export default function Dashboard() {
         ))}
       </div>
 
+      <div className="mt-10 grid grid-cols-3 gap-6">
+        {files.map(f => (
+          <div key={f.name} className="p-4 bg-white/5 border border-white/10 rounded-lg">
+            <div className="text-4xl">📄</div>
+            <div className="truncate mt-2">{f.name}</div>
+          </div>
+        ))}
+      </div>
+
       {showCreate && (
         <CreateFolderModal
           onCreate={createFolder}
           onClose={() => setShowCreate(false)}
         />
       )}
+
+      {showUpload && (
+        <UploadFileModal
+          onUpload={uploadFile}
+          onClose={() => setShowUpload(false)}
+        />
+      )}
+
     </div>
   );
 }
