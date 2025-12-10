@@ -110,18 +110,18 @@ export default function Dashboard() {
   }
 
   async function handleDownload(file) {
-    await api.downloadFile(file.name);
+    await api.downloadFile(currentFolderId ?? "root", file.name);
   }
 
   async function handleDelete(file) {
-    await api.deleteFile(file.name);
+    await api.deleteFile(currentFolderId ?? "root", file.name);
     loadFolder(currentFolderId);
   }
 
   async function handleRename(file) {
     const newName = prompt("Enter new file name:", file.name);
     if (!newName) return;
-    await api.renameFile(file.name, newName);
+    await api.renameFile(currentFolderId ?? "root", file.name, newName);
     loadFolder(currentFolderId);
   }
 
@@ -130,7 +130,8 @@ export default function Dashboard() {
     try {
       const form = new FormData();
       form.append("file", file);
-      form.append("folder_id", currentFolderId);
+      form.append("folder_id", currentFolderId ?? "root");
+
 
       await api.uploadFile(form);
 
