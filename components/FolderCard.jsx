@@ -2,20 +2,34 @@
 
 import { useState, useRef, useEffect } from "react";
 import { Folder, MoreVertical, Download, Trash2, Pencil } from "lucide-react";
+import PopupPortal from "./PopupPortal";
 
 export default function FolderCard({ folder, onOpen, onDelete, onRename, onDownload }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef(null);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const btnRef = useRef(null);
 
+  // Close menu when clicking outside
   useEffect(() => {
     function handleClick(e) {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
+      if (!btnRef.current?.contains(e.target)) {
         setMenuOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  // When menu opens, calculate popup position
+  useEffect(() => {
+    if (menuOpen && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setMenuPos({
+        top: rect.bottom + 5,
+        left: rect.right - 150
+      });
+    }
+  }, [menuOpen]);
 
   return (
     <div
@@ -25,8 +39,9 @@ export default function FolderCard({ folder, onOpen, onDelete, onRename, onDownl
                  hover:shadow-lg hover:scale-[1.015] backdrop-blur-md"
       onClick={() => !menuOpen && onOpen(folder)}
     >
-      {/* Menu button */}
+      {/* 3 dots button */}
       <button
+        ref={btnRef}
         className="absolute top-2 right-2 p-1.5 rounded-lg hover:bg-white/20 z-20"
         onClick={(e) => {
           e.stopPropagation();
@@ -36,56 +51,53 @@ export default function FolderCard({ folder, onOpen, onDelete, onRename, onDownl
         <MoreVertical size={16} />
       </button>
 
-      {/* Dropdown */}
+      {/* PORTAL POPUP */}
       {menuOpen && (
-        <div
-          ref={menuRef}
-          className="absolute right-2 top-8 w-32 
-               bg-black/90 backdrop-blur-xl
-               rounded-lg border border-white/10 shadow-2xl
-               p-1.5 z-[9999] overflow-visible space-y-1"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <MenuItem
-            icon={<Pencil size={14} />}
-            label="Rename"
-            onClick={() => {
-              setMenuOpen(false);
-              onRename(folder);
+        <PopupPortal>
+          <div
+            className="
+              fixed
+              z-[999999]
+              bg-[#141519]
+              border border-white/10
+              rounded-xl
+              shadow-xl
+              w-40 py-2
+            "
+            style={{
+              top: menuPos.top,
+              left: menuPos.left,
             }}
-          />
+          >
+            <MenuItem
+              icon={<Pencil size={14} />}
+              label="Rename"
+              onClick={() => { setMenuOpen(false); onRename(folder); }}
+            />
 
-          <MenuItem
-            icon={<Download size={14} />}
-            label="Download"
-            onClick={() => {
-              setMenuOpen(false);
-              onDownload(folder);
-            }}
-          />
+            <MenuItem
+              icon={<Download size={14} />}
+              label="Download"
+              onClick={() => { setMenuOpen(false); onDownload(folder); }}
+            />
 
-          <MenuItem
-            icon={<Trash2 size={14} className="text-red-400" />}
-            label="Delete"
-            className="text-red-400"
-            onClick={() => {
-              setMenuOpen(false);
-              onDelete(folder);
-            }}
-          />
-        </div>
+            <MenuItem
+              icon={<Trash2 size={14} className="text-red-400" />}
+              label="Delete"
+              className="text-red-400"
+              onClick={() => { setMenuOpen(false); onDelete(folder); }}
+            />
+          </div>
+        </PopupPortal>
       )}
 
-
-      {/* Icon */}
+      {/* Folder Icon */}
       <Folder size={36} className="text-yellow-300 mb-2" />
 
-      {/* Premium Folder Name */}
-      <div className="truncate text-[13px] font-medium text-white/95 tracking-tight drop-shadow-sm">
+      {/* Folder Name */}
+      <div className="truncate text-[13px] font-medium text-white/95 tracking-tight">
         {folder.name}
       </div>
-
-
     </div>
   );
 }
@@ -94,7 +106,7 @@ function MenuItem({ icon, label, onClick, className = "" }) {
   return (
     <button
       className={`flex items-center gap-2 w-full 
-                  px-2 py-1 rounded-md text-xs 
+                  px-3 py-1.5 rounded-md text-xs
                   hover:bg-white/10 transition ${className}`}
       onClick={onClick}
     >
@@ -103,4 +115,3 @@ function MenuItem({ icon, label, onClick, className = "" }) {
     </button>
   );
 }
-
