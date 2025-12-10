@@ -3,16 +3,25 @@ import Navbar from "@/components/Navbar";
 
 export default function DashboardLayout({ children }) {
   return (
-    <div className="min-h-screen flex bg-[#0d0e12] text-white">
-      <Sidebar />
+    <div className="h-screen w-screen flex overflow-hidden">
 
-      <div className="flex-1 flex flex-col">
+      {/* ⭐ FIXED LEFT SIDEBAR */}
+      <div className="w-64 h-full fixed left-0 top-0 border-r border-white/10 bg-[#0d0e12]">
+        <Sidebar />
+      </div>
+
+      {/* ⭐ SCROLLABLE CONTENT AREA */}
+      <div className="ml-64 flex-1 h-full flex flex-col overflow-y-auto">
+
+        {/* Sticky navbar */}
         <Navbar />
 
-        <main className="p-6 min-h-screen bg-[#0d0e12]">
+        {/* Page content (scrollable area) */}
+        <main className="px-6 pt-4 pb-20">
           {children}
         </main>
       </div>
+
     </div>
   );
 }

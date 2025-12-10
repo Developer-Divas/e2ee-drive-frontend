@@ -146,10 +146,20 @@ export default function Dashboard() {
   return (
     <div className="pt-4">
 
-      {/* Sticky Breadcrumb Section */}
-      <div className="sticky top-14 z-40 bg-[#0d0e12]/90 backdrop-blur-xl pb-3 border-b border-white/10">
-        <Breadcrumb items={breadcrumb} onNavigate={handleBreadcrumbClick} />
+      {/* ⭐ ULTRA THIN PREMIUM BREADCRUMB BAR */}
+      <div
+        className="
+          sticky top-14 z-40
+          bg-[#0d0e12]/85 backdrop-blur-xl
+          border-b border-white/5
+        "
+      >
+        <div className="px-1 py-1">
+          <Breadcrumb items={breadcrumb} onNavigate={handleBreadcrumbClick} />
+        </div>
       </div>
+
+
 
       {/* Folder Grid */}
       <div className="

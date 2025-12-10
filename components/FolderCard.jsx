@@ -7,12 +7,17 @@ import PopupPortal from "./PopupPortal";
 export default function FolderCard({ folder, onOpen, onDelete, onRename, onDownload }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
-  const btnRef = useRef(null);
 
-  // Close menu when clicking outside
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
+
+  // Close menu when clicking outside BOTH button and menu
   useEffect(() => {
     function handleClick(e) {
-      if (!btnRef.current?.contains(e.target)) {
+      if (
+        !btnRef.current?.contains(e.target) &&
+        !menuRef.current?.contains(e.target)
+      ) {
         setMenuOpen(false);
       }
     }
@@ -20,12 +25,12 @@ export default function FolderCard({ folder, onOpen, onDelete, onRename, onDownl
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  // When menu opens, calculate popup position
+  // Position the popup
   useEffect(() => {
     if (menuOpen && btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
       setMenuPos({
-        top: rect.bottom + 5,
+        top: rect.bottom + 6,
         left: rect.right - 150
       });
     }
@@ -39,7 +44,7 @@ export default function FolderCard({ folder, onOpen, onDelete, onRename, onDownl
                  hover:shadow-lg hover:scale-[1.015] backdrop-blur-md"
       onClick={() => !menuOpen && onOpen(folder)}
     >
-      {/* 3 dots button */}
+      {/* 3 dots */}
       <button
         ref={btnRef}
         className="absolute top-2 right-2 p-1.5 rounded-lg hover:bg-white/20 z-20"
@@ -51,10 +56,11 @@ export default function FolderCard({ folder, onOpen, onDelete, onRename, onDownl
         <MoreVertical size={16} />
       </button>
 
-      {/* PORTAL POPUP */}
+      {/* MENU PORTAL */}
       {menuOpen && (
         <PopupPortal>
           <div
+            ref={menuRef}
             className="
               fixed
               z-[999999]
@@ -72,29 +78,38 @@ export default function FolderCard({ folder, onOpen, onDelete, onRename, onDownl
             <MenuItem
               icon={<Pencil size={14} />}
               label="Rename"
-              onClick={() => { setMenuOpen(false); onRename(folder); }}
+              onClick={() => {
+                setMenuOpen(false);
+                onRename(folder);
+              }}
             />
 
             <MenuItem
               icon={<Download size={14} />}
               label="Download"
-              onClick={() => { setMenuOpen(false); onDownload(folder); }}
+              onClick={() => {
+                setMenuOpen(false);
+                onDownload(folder);
+              }}
             />
 
             <MenuItem
               icon={<Trash2 size={14} className="text-red-400" />}
               label="Delete"
               className="text-red-400"
-              onClick={() => { setMenuOpen(false); onDelete(folder); }}
+              onClick={() => {
+                setMenuOpen(false);
+                onDelete(folder);
+              }}
             />
           </div>
         </PopupPortal>
       )}
 
-      {/* Folder Icon */}
+      {/* Folder icon */}
       <Folder size={36} className="text-yellow-300 mb-2" />
 
-      {/* Folder Name */}
+      {/* Folder name */}
       <div className="truncate text-[13px] font-medium text-white/95 tracking-tight">
         {folder.name}
       </div>

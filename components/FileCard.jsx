@@ -10,12 +10,16 @@ export default function FileCard({ file, onOpen, onDownload, onDelete, onRename 
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
 
   const btnRef = useRef(null);
+  const menuRef = useRef(null);
   const Icon = getFileIcon(file.name);
 
-  // Close menu when clicking outside
+  // Close menu only when clicking outside BOTH button AND menu
   useEffect(() => {
     function handleClick(e) {
-      if (!btnRef.current?.contains(e.target)) {
+      if (
+        !btnRef.current?.contains(e.target) &&
+        !menuRef.current?.contains(e.target)
+      ) {
         setMenuOpen(false);
       }
     }
@@ -23,12 +27,13 @@ export default function FileCard({ file, onOpen, onDownload, onDelete, onRename 
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  // Recalculate popup position when menu opens
+  // Position popup
   useEffect(() => {
     if (menuOpen && btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
+
       setMenuPos({
-        top: rect.bottom + 5,
+        top: rect.bottom + 6,
         left: rect.right - 140
       });
     }
@@ -46,7 +51,7 @@ export default function FileCard({ file, onOpen, onDownload, onDelete, onRename 
       "
       onClick={() => !menuOpen && onOpen(file)}
     >
-      {/* THREE DOTS BUTTON */}
+      {/* THREE DOTS */}
       <button
         ref={btnRef}
         className="absolute top-2 right-2 p-1.5 rounded-md hover:bg-white/20 z-20"
@@ -58,10 +63,11 @@ export default function FileCard({ file, onOpen, onDownload, onDelete, onRename 
         <MoreVertical size={16} />
       </button>
 
-      {/* FLOATING MENU (PORTAL) */}
+      {/* MENU PORTAL */}
       {menuOpen && (
         <PopupPortal>
           <div
+            ref={menuRef}
             className="
               fixed z-[999999]
               bg-black/90 backdrop-blur-xl
@@ -73,25 +79,33 @@ export default function FileCard({ file, onOpen, onDownload, onDelete, onRename 
               top: menuPos.top,
               left: menuPos.left
             }}
-            onClick={(e) => e.stopPropagation()}
           >
             <MenuItem
               label="Rename"
               icon={<Pencil size={12} />}
-              onClick={() => { setMenuOpen(false); onRename(file); }}
+              onClick={() => {
+                setMenuOpen(false);
+                onRename(file);
+              }}
             />
 
             <MenuItem
               label="Download"
               icon={<Download size={12} />}
-              onClick={() => { setMenuOpen(false); onDownload(file); }}
+              onClick={() => {
+                setMenuOpen(false);
+                onDownload(file);
+              }}
             />
 
             <MenuItem
               label="Delete"
               className="text-red-400"
               icon={<Trash2 size={12} className="text-red-400" />}
-              onClick={() => { setMenuOpen(false); onDelete(file); }}
+              onClick={() => {
+                setMenuOpen(false);
+                onDelete(file);
+              }}
             />
           </div>
         </PopupPortal>
@@ -113,7 +127,7 @@ export default function FileCard({ file, onOpen, onDownload, onDelete, onRename 
   );
 }
 
-function MenuItem({ icon, label, className = "", onClick }) {
+function MenuItem({ icon, label, onClick, className = "" }) {
   return (
     <button
       className={`
