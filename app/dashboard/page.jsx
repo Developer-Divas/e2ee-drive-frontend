@@ -129,6 +129,21 @@ export default function Dashboard() {
     loadFolder(currentFolderId);
   }
 
+  async function handleFolderDelete(folder) {
+    await api.deleteFolder(folder.id);
+    loadFolder(currentFolderId);
+  }
+
+  async function handleFolderRename(folder) {
+    const newName = prompt("Enter folder name:", folder.name);
+    if (!newName) return;
+    await api.renameFolder(folder.id, newName);
+    loadFolder(currentFolderId);
+  }
+
+  async function handleFolderDownload(folder) {
+    await api.downloadFolder(folder.id);
+  }
 
   async function uploadFile(file) {
     try {
@@ -151,9 +166,17 @@ export default function Dashboard() {
     <div>
       <Breadcrumb items={breadcrumb} onNavigate={handleBreadcrumbClick} />
 
-      <div className="mt-6 grid grid-cols-3 gap-6">
+      <div className="mt-6 grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-4">
         {folders.map(f => (
-          <FolderCard key={f.id} folder={f} onOpen={openFolder} />
+          <FolderCard
+            key={f.id}
+            folder={f}
+            onOpen={openFolder}
+            onDelete={handleFolderDelete}
+            onRename={handleFolderRename}
+            onDownload={handleFolderDownload}
+          />
+
         ))}
       </div>
 

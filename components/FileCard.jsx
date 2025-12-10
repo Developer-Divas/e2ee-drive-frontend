@@ -1,64 +1,96 @@
-'use client';
+"use client";
 
+import { useState, useRef, useEffect } from "react";
 import { getFileIcon } from "./FileIcons";
-import { Download, Trash2, Pencil } from "lucide-react";
-import { useState } from "react";
+import { MoreVertical, Download, Trash2, Pencil } from "lucide-react";
 
 export default function FileCard({ file, onOpen, onDownload, onDelete, onRename }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
   const Icon = getFileIcon(file.name);
-  const [showActions, setShowActions] = useState(false);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    function handleClick(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
 
   return (
     <div
-      onClick={() => onOpen?.(file)}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
       className="
-        relative group cursor-pointer p-4 rounded-xl
-        bg-[rgba(255,255,255,0.04)]
-        backdrop-blur-xl
-        border border-white/10
-        shadow-[0_0_20px_rgba(0,0,0,0.2)]
-        hover:bg-[rgba(255,255,255,0.10)]
-        transition-all duration-200
-        hover:scale-[1.03]
-        hover:shadow-[0_0_30px_rgba(0,0,0,0.3)]
+        relative group cursor-pointer
+        bg-white/5 hover:bg-white/10
+        border border-white/10 hover:border-white/20
+        p-2.5 rounded-lg
+        shadow-sm hover:shadow-md
+        transition-all backdrop-blur-md
       "
+      onClick={() => !menuOpen && onOpen(file)}
     >
-      {/* File Icon */}
-      <div className="mb-3 text-white">
-        <Icon size={38} className="group-hover:scale-110 transition transform" />
-      </div>
+      {/* MENU BUTTON */}
+      <button
+        className="absolute top-1.5 right-1.5 p-1 rounded-md hover:bg-white/20 z-20"
+        onClick={(e) => {
+          e.stopPropagation();
+          setMenuOpen(!menuOpen);
+        }}
+      >
+        <MoreVertical size={14} />
+      </button>
 
-      {/* File name */}
-      <div className="font-medium text-sm truncate">{file.name}</div>
-
-      {/* Size + date */}
-      <div className="text-xs text-white/60 mt-1">
-        {formatSize(file.size || 0)}
-      </div>
-
-      {/* Hover action buttons */}
-      {showActions && (
-        <div className="
-          absolute top-3 right-3 flex gap-2
-          bg-black/40 p-1 rounded-lg backdrop-blur-md
-          border border-white/10
-        ">
-          <button onClick={(e) => { e.stopPropagation(); onDownload?.(file); }}>
-            <Download size={18} className="hover:text-blue-400" />
-          </button>
-
-          <button onClick={(e) => { e.stopPropagation(); onRename?.(file); }}>
-            <Pencil size={18} className="hover:text-green-400" />
-          </button>
-
-          <button onClick={(e) => { e.stopPropagation(); onDelete?.(file); }}>
-            <Trash2 size={18} className="hover:text-red-400" />
-          </button>
+      {/* MENU */}
+      {menuOpen && (
+        <div
+          ref={menuRef}
+          className="
+            absolute right-1.5 top-8 w-28 
+            bg-black/90 backdrop-blur-xl 
+            rounded-md border border-white/10 
+            shadow-xl p-1.5 z-[9999] space-y-0.5
+          "
+          onClick={(e) => e.stopPropagation()}
+        >
+          <MenuItem label="Rename" icon={<Pencil size={12} />} onClick={() => { setMenuOpen(false); onRename(file); }} />
+          <MenuItem label="Download" icon={<Download size={12} />} onClick={() => { setMenuOpen(false); onDownload(file); }} />
+          <MenuItem label="Delete" className="text-red-400" icon={<Trash2 size={12} className="text-red-400" />} onClick={() => { setMenuOpen(false); onDelete(file); }} />
         </div>
       )}
+
+      {/* FILE ICON */}
+      <Icon size={26} className="text-white/90 mb-1" />
+
+      {/* FILE NAME */}
+      <div className="truncate text-[12px] font-medium text-white/95 tracking-tight">
+        {file.name}
+      </div>
+
+      {/* FILE SIZE */}
+      <div className="text-[10px] text-white/50">
+        {formatSize(file.size)}
+      </div>
     </div>
+  );
+}
+
+function MenuItem({ icon, label, className = "", onClick }) {
+  return (
+    <button
+      className={`
+        flex items-center gap-2 w-full
+        px-2 py-[5px] rounded 
+        text-[11px] hover:bg-white/10 transition
+        ${className}
+      `}
+      onClick={onClick}
+    >
+      {icon}
+      {label}
+    </button>
   );
 }
 
