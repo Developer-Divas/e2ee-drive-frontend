@@ -97,9 +97,13 @@ export default function Dashboard() {
   // Create folder
   // ---------------------------
   async function createFolder(name) {
-    await api.createFolder(name, currentFolderId);
-    setShowCreate(false);
-    loadFolder(currentFolderId);
+    try {
+      await api.createFolder(name, currentFolderId);
+      setShowCreate(false);
+      loadFolder(currentFolderId);
+    } catch (err) {
+      alert(err.message); // or toast
+    }
   }
 
   // ---------------------------
