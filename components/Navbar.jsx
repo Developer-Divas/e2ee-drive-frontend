@@ -34,6 +34,15 @@ export default function Navbar() {
           + New Folder
         </button>
 
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("open-upload-file"))}
+          className="px-3 py-1.5 rounded-md border border-white/20 text-white/90 
+             hover:bg-white/10 hover:border-white/30 transition"
+        >
+          ↑ Upload File
+        </button>
+
+
         {/* 🔥 SIGN OUT BUTTON */}
         <button
           onClick={handleLogout}
