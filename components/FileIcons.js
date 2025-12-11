@@ -1,3 +1,5 @@
+'use client';
+
 import {
   File, FileImage, FileVideo, FileText, 
   FileArchive, FileCode, FileSpreadsheet, 
