@@ -18,7 +18,7 @@ export default function Sidebar() {
         <Menu size={24} className="text-white" />
       </button>
 
-      {/* -------- Sidebar Drawer -------- */}
+      {/* -------- Sidebar Drawer -------- For Mobile*/}
       <aside
         className={`
           fixed top-0 left-0 h-full 
