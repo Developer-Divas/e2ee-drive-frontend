@@ -4,10 +4,11 @@ import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const router = useRouter();
+  const BASE_URL = process.env.NEXT_PUBLIC_APP_URL;
 
   function login() {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
-    const redirectUri = "http://localhost:3000/oauth/callback";
+    const redirectUri = `${BASE_URL}/oauth/callback`;
 
     const url =
       "https://accounts.google.com/o/oauth2/v2/auth" +
