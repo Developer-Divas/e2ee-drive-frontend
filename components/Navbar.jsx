@@ -16,7 +16,14 @@ export default function Navbar() {
   }
 
   return (
-    <header className="h-14 px-6 flex items-center justify-between border-b border-[rgba(255,255,255,0.03)]">
+    <header
+      className="
+    h-14 px-6 flex items-center justify-between
+    border-b border-white/10
+    bg-[#0d0e12]/80 backdrop-blur-xl
+    sticky top-0 z-50
+    shadow-[0_2px_10px_rgba(0,0,0,0.4)]
+  ">
       <div className="flex items-center gap-4">
         <div className="w-9 h-9 rounded-lg bg-[rgba(255,255,255,0.04)] flex items-center justify-center text-xl font-bold">
           ED

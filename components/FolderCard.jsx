@@ -1,28 +1,132 @@
-export default function FolderCard({ folder, onOpen }) {
-  const count = folder.item_count ?? folder.itemCount ?? folder.count ?? 0;
+"use client";
+
+import { useState, useRef, useEffect } from "react";
+import { Folder, MoreVertical, Download, Trash2, Pencil } from "lucide-react";
+import PopupPortal from "./PopupPortal";
+
+export default function FolderCard({ folder, onOpen, onDelete, onRename, onDownload }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+
+  const btnRef = useRef(null);
+  const menuRef = useRef(null);
+
+  // Close menu when clicking outside BOTH button and menu
+  useEffect(() => {
+    function handleClick(e) {
+      if (
+        !btnRef.current?.contains(e.target) &&
+        !menuRef.current?.contains(e.target)
+      ) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  // Position the popup
+  useEffect(() => {
+    if (menuOpen && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setMenuPos({
+        top: rect.bottom + 6,
+        left: rect.right - 150
+      });
+    }
+  }, [menuOpen]);
 
   return (
     <div
-      onClick={() => onOpen && onOpen(folder)}
-      className="group cursor-pointer p-6 rounded-xl bg-[#1b1b2d] hover:bg-[#22223c] hover:shadow-xl transition-all border border-[#2a2a3d]"
+      className="group relative bg-white/5 hover:bg-white/10
+                 border border-white/10 hover:border-white/20
+                 p-3 rounded-xl cursor-pointer transition-all shadow-md
+                 hover:shadow-lg hover:scale-[1.015] backdrop-blur-md"
+      onClick={() => !menuOpen && onOpen(folder)}
     >
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          {/* Folder Icon */}
-          <div className="w-12 h-12 rounded-lg bg-[#2a2a44] flex items-center justify-center group-hover:bg-[#34345a] transition">
-            <svg width="26" height="22" viewBox="0 0 24 24" fill="#FACC15" xmlns="http://www.w3.org/2000/svg">
-              <path d="M10 4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h6z" />
-            </svg>
-          </div>
+      {/* 3 dots */}
+      <button
+        ref={btnRef}
+        className="absolute top-2 right-2 p-1.5 rounded-lg hover:bg-white/20 z-20"
+        onClick={(e) => {
+          e.stopPropagation();
+          setMenuOpen(!menuOpen);
+        }}
+      >
+        <MoreVertical size={16} />
+      </button>
 
-          <div>
-            <div className="font-semibold text-lg">{folder.name}</div>
-            <div className="text-xs text-gray-400">Owner: you</div>
-          </div>
-        </div>
+      {/* MENU PORTAL */}
+      {menuOpen && (
+        <PopupPortal>
+          <div
+            ref={menuRef}
+            className="
+              fixed
+              z-[999999]
+              bg-[#141519]
+              border border-white/10
+              rounded-xl
+              shadow-xl
+              w-40 py-2
+            "
+            style={{
+              top: menuPos.top,
+              left: menuPos.left,
+            }}
+          >
+            <MenuItem
+              icon={<Pencil size={14} />}
+              label="Rename"
+              onClick={() => {
+                setMenuOpen(false);
+                onRename(folder);
+              }}
+            />
 
-        <div className="text-sm text-gray-400">{count} {count === 1 ? "item" : "items"}</div>
+            <MenuItem
+              icon={<Download size={14} />}
+              label="Download"
+              onClick={() => {
+                setMenuOpen(false);
+                onDownload(folder);
+              }}
+            />
+
+            <MenuItem
+              icon={<Trash2 size={14} className="text-red-400" />}
+              label="Delete"
+              className="text-red-400"
+              onClick={() => {
+                setMenuOpen(false);
+                onDelete(folder);
+              }}
+            />
+          </div>
+        </PopupPortal>
+      )}
+
+      {/* Folder icon */}
+      <Folder size={36} className="text-yellow-300 mb-2" />
+
+      {/* Folder name */}
+      <div className="truncate text-[13px] font-medium text-white/95 tracking-tight">
+        {folder.name}
       </div>
     </div>
+  );
+}
+
+function MenuItem({ icon, label, onClick, className = "" }) {
+  return (
+    <button
+      className={`flex items-center gap-2 w-full 
+                  px-3 py-1.5 rounded-md text-xs
+                  hover:bg-white/10 transition ${className}`}
+      onClick={onClick}
+    >
+      {icon}
+      <span>{label}</span>
+    </button>
   );
 }

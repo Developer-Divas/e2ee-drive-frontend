@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { logout } from '@/lib/auth';
 import { useRouter, useSearchParams } from 'next/navigation';
 import FolderCard from '@/components/FolderCard';
 import CreateFolderModal from '@/components/CreateFolderModal';
@@ -23,9 +22,7 @@ export default function Dashboard() {
   const [files, setFiles] = useState([]);
 
 
-  // ---------------------------
   // Load folder + breadcrumb
-  // ---------------------------
   async function loadFolder(folderId = null) {
     try {
       const data = await api.getFolders(folderId);
@@ -35,10 +32,7 @@ export default function Dashboard() {
       if (data.path || data.parent_chain) {
         const chain = data.path ?? data.parent_chain;
         chain.forEach(p => {
-          bc.push({
-            id: p.id,
-            name: p.name
-          });
+          bc.push({ id: p.id, name: p.name });
         });
       }
 
@@ -56,55 +50,46 @@ export default function Dashboard() {
     loadFolder(folderId);
   }
 
-  // 1️⃣ Modal listener → ALWAYS once.
+
+  // Folder Create Modal Listener
   useEffect(() => {
     function open() {
-      console.log("EVENT RECEIVED");
       setShowCreate(true);
     }
-
     window.addEventListener("open-create-folder", open);
     return () => window.removeEventListener("open-create-folder", open);
   }, []);
 
-  // 2️⃣ Root reload → whenever rootParam changes
-  useEffect(() => {
-    if (rootParam) {
-      console.log("ROOT TRIGGERED →", rootParam);
-      loadFolder(null);
-    }
-  }, [rootParam]);
-
-  // 3️⃣ Initial folder load → once
-  useEffect(() => {
-    console.log("INITIAL LOAD → ROOT");
-    loadFolder(null);
-  }, []);
-
-
+  // Upload Modal Listener
   useEffect(() => {
     function openUpload() {
-      console.log("UPLOAD MODAL OPENED");
       setShowUpload(true);
     }
-
     window.addEventListener("open-upload-file", openUpload);
     return () => window.removeEventListener("open-upload-file", openUpload);
   }, []);
 
+  // Root navigation
+  useEffect(() => {
+    if (rootParam) loadFolder(null);
+  }, [rootParam]);
 
-  // ---------------------------
-  // Create folder
-  // ---------------------------
+  // Initial load
+  useEffect(() => {
+    loadFolder(null);
+  }, []);
+
+
   async function createFolder(name) {
-    await api.createFolder(name, currentFolderId);
-    setShowCreate(false);
-    loadFolder(currentFolderId);
+    try {
+      await api.createFolder(name, currentFolderId);
+      setShowCreate(false);
+      loadFolder(currentFolderId);
+    } catch (err) {
+      alert(err.message);
+    }
   }
 
-  // ---------------------------
-  // Open folder
-  // ---------------------------
   function openFolder(folder) {
     loadFolder(folder.id);
   }
@@ -126,17 +111,32 @@ export default function Dashboard() {
   }
 
 
+  // Folder actions
+  async function handleFolderDelete(folder) {
+    await api.deleteFolder(folder.id);
+    loadFolder(currentFolderId);
+  }
+
+  async function handleFolderRename(folder) {
+    const newName = prompt("Enter folder name:", folder.name);
+    if (!newName) return;
+    await api.renameFolder(folder.id, newName);
+    loadFolder(currentFolderId);
+  }
+
+  async function handleFolderDownload(folder) {
+    await api.downloadFolder(folder.id);
+  }
+
+
   async function uploadFile(file) {
     try {
       const form = new FormData();
       form.append("file", file);
       form.append("folder_id", currentFolderId ?? "root");
-
-
       await api.uploadFile(form);
-
       setShowUpload(false);
-      loadFolder(currentFolderId); // refresh after upload
+      loadFolder(currentFolderId);
     } catch (err) {
       console.error("UPLOAD ERROR →", err);
     }
@@ -144,31 +144,62 @@ export default function Dashboard() {
 
 
   return (
-    <div>
-      <Breadcrumb items={breadcrumb} onNavigate={handleBreadcrumbClick} />
+    <div className="pt-4">
 
-      <div className="mt-6 grid grid-cols-3 gap-6">
+      {/* ⭐ ULTRA THIN PREMIUM BREADCRUMB BAR */}
+      <div
+        className="
+          sticky top-14 z-40
+          bg-[#0d0e12]/85 backdrop-blur-xl
+          border-b border-white/5
+        "
+      >
+        <div className="px-1 py-1">
+          <Breadcrumb items={breadcrumb} onNavigate={handleBreadcrumbClick} />
+        </div>
+      </div>
+
+
+
+      {/* Folder Grid */}
+      <div className="
+        mt-6 
+        grid gap-4 
+        grid-cols-[repeat(auto-fill,minmax(160px,1fr))]
+      ">
         {folders.map(f => (
-          <FolderCard key={f.id} folder={f} onOpen={openFolder} />
+          <FolderCard
+            key={f.id}
+            folder={f}
+            onOpen={openFolder}
+            onDelete={handleFolderDelete}
+            onRename={handleFolderRename}
+            onDownload={handleFolderDownload}
+          />
         ))}
       </div>
 
-      {/* Files section */}
+      {/* Files Grid */}
       {files.length > 0 && (
-        <div className="mt-10 grid grid-cols-3 gap-6">
+        <div className="
+          mt-10 
+          grid gap-3 
+          grid-cols-[repeat(auto-fill,minmax(130px,1fr))]
+        ">
           {files.map(f => (
             <FileCard
+              key={f.name}
               file={f}
               onOpen={() => console.log("OPEN", f)}
               onDownload={handleDownload}
               onDelete={handleDelete}
               onRename={handleRename}
             />
-
           ))}
         </div>
       )}
 
+      {/* Modals */}
       {showCreate && (
         <CreateFolderModal
           onCreate={createFolder}
@@ -182,7 +213,6 @@ export default function Dashboard() {
           onClose={() => setShowUpload(false)}
         />
       )}
-
     </div>
   );
 }
