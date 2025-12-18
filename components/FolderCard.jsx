@@ -84,14 +84,14 @@ export default function FolderCard({ folder, onOpen, onDelete, onRename, onDownl
               }}
             />
 
-            <MenuItem
+            {/* <MenuItem
               icon={<Download size={14} />}
               label="Download"
               onClick={() => {
                 setMenuOpen(false);
                 onDownload(folder);
               }}
-            />
+            /> */}
 
             <MenuItem
               icon={<Trash2 size={14} className="text-red-400" />}

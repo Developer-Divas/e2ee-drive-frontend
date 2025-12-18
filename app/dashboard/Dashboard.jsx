@@ -100,18 +100,28 @@ export default function Dashboard() {
       alert("Encryption metadata missing. Cannot decrypt this file.");
       return;
     }
-    
+
     const meta =
       typeof file.meta === "string"
         ? JSON.parse(file.meta)
         : file.meta;
-    
-    const decryptedBlob = await decryptFile(encryptedBlob, password, meta);
 
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(decryptedBlob);
-    a.download = meta.originalName;
-    a.click();
+    try {
+      const decryptedBlob = await decryptFile(encryptedBlob, password, meta);
+
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(decryptedBlob);
+      a.download = meta.originalName;
+      a.click();
+
+    } catch (err) {
+      if (err.message === "DECRYPT_FAILED") {
+        alert("❌ Wrong password. Please try again.");
+      } else {
+        alert("❌ Decryption failed due to an unexpected error.");
+      }
+    }
+
   }
 
 
