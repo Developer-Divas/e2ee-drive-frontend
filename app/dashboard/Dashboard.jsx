@@ -9,6 +9,10 @@ import Breadcrumb from '@/components/Breadcrumb';
 import UploadFileModal from '@/components/UploadFileModal';
 import FileCard from '@/components/FileCard';
 
+import { encryptFile, decryptFile } from "@/lib/crypto";
+import { getToken } from "@/lib/auth";
+
+
 export default function Dashboard() {
   const r = useRouter();
   const searchParams = useSearchParams();
@@ -81,8 +85,35 @@ export default function Dashboard() {
   }
 
   async function handleDownload(file) {
-    await api.downloadFile(currentFolderId ?? "root", file.name);
+    const password = prompt("Enter encryption password");
+    if (!password) return;
+
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/download/${currentFolderId ?? "root"}/${file.name}`,
+      { headers: { Authorization: `Bearer ${getToken()}` } }
+    );
+
+    const { url } = await res.json();
+    const encryptedBlob = await fetch(url).then(r => r.blob());
+
+    if (!file.meta) {
+      alert("Encryption metadata missing. Cannot decrypt this file.");
+      return;
+    }
+    
+    const meta =
+      typeof file.meta === "string"
+        ? JSON.parse(file.meta)
+        : file.meta;
+    
+    const decryptedBlob = await decryptFile(encryptedBlob, password, meta);
+
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(decryptedBlob);
+    a.download = meta.originalName;
+    a.click();
   }
+
 
   async function handleDelete(file) {
     await api.deleteFile(currentFolderId ?? "root", file.name);
@@ -114,18 +145,31 @@ export default function Dashboard() {
 
   async function uploadFile(file) {
     try {
+      const password = prompt("Set encryption password");
+      if (!password) return;
+
+      const { encryptedBlob, meta } = await encryptFile(file, password);
+
+      const encryptedFile = new File(
+        [encryptedBlob],
+        file.name + ".enc",
+        { type: "application/octet-stream" }
+      );
+
       const form = new FormData();
-      form.append("file", file);
+      form.append("file", encryptedFile);
       form.append("folder_id", currentFolderId ?? "root");
+      form.append("meta", JSON.stringify(meta));
 
       await api.uploadFile(form);
 
       setShowUpload(false);
       loadFolder(currentFolderId);
-    } catch (err) {
-      console.error("UPLOAD ERROR →", err);
+    } catch (e) {
+      console.error("UPLOAD FAILED", e);
     }
   }
+
 
   return (
     <div className="pt-4">
