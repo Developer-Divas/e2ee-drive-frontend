@@ -5,6 +5,8 @@ import PopupPortal from "./PopupPortal";
 import { getFileIcon } from "./FileIcons";
 import { MoreVertical, Download, Trash2, Pencil } from "lucide-react";
 
+import EncryptionProofModal from "./EncryptionProofModal";
+
 export default function FileCard({ file, onOpen, onDownload, onDelete, onRename }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
@@ -12,6 +14,9 @@ export default function FileCard({ file, onOpen, onDownload, onDelete, onRename 
   const btnRef = useRef(null);
   const menuRef = useRef(null);
   const Icon = getFileIcon(file.name);
+
+  const [showProof, setShowProof] = useState(false);
+
 
   // Close menu only when clicking outside BOTH button AND menu
   useEffect(() => {
@@ -120,15 +125,19 @@ export default function FileCard({ file, onOpen, onDownload, onDelete, onRename 
           title={file.name}>{file.name}</span>
 
         {file.meta && (
-          <span
-            title="End-to-End Encrypted. Only you can decrypt this file."
-            className="absolute bottom-2 right-2
-            text-gray-400 cursor-help
-            select-none"
-          >
-            🔐
-          </span>
+          <>
+            <span
+              onClick={() => setShowProof(true)}
+              className="absolute bottom-2 right-2 cursor-pointer text-gray-400"
+              title="View encryption proof"
+            >
+              🔐
+            </span>
+
+            {showProof && <EncryptionProofModal onClose={() => setShowProof(false)} />}
+          </>
         )}
+
       </div>
 
 
