@@ -115,9 +115,22 @@ export default function FileCard({ file, onOpen, onDownload, onDelete, onRename 
       <Icon size={28} className="text-white/90 mb-2" />
 
       {/* FILE NAME */}
-      <div className="truncate text-[12px] font-medium text-white/95 tracking-tight">
-        {file.name}
+      <div className="flex items-center gap-1 text-sm min-w-0">
+        <span className="truncate cursor-default"
+          title={file.name}>{file.name}</span>
+
+        {file.meta && (
+          <span
+            title="End-to-End Encrypted. Only you can decrypt this file."
+            className="absolute bottom-2 right-2
+            text-gray-400 cursor-help
+            select-none"
+          >
+            🔐
+          </span>
+        )}
       </div>
+
 
       {/* FILE SIZE */}
       <div className="text-[10px] text-white/50">
