@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 export default function CreateFolderModal({ onCreate, onClose }) {
   const [name, setName] = useState('');
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div className="bg-surface card w-96 z-10">
         <h3 className="text-lg font-semibold mb-2">Create Folder</h3>
