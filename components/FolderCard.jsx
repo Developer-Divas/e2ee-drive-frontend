@@ -3,10 +3,15 @@
 import { useState, useRef, useEffect } from "react";
 import { Folder, MoreVertical, Download, Trash2, Pencil } from "lucide-react";
 import PopupPortal from "./PopupPortal";
+import RenameFolderModal from "./RenameFolderModal";
+
 
 export default function FolderCard({ folder, onOpen, onDelete, onRename, onDownload }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+
+  const [showRename, setShowRename] = useState(false);
+
 
   const btnRef = useRef(null);
   const menuRef = useRef(null);
@@ -80,7 +85,7 @@ export default function FolderCard({ folder, onOpen, onDelete, onRename, onDownl
               label="Rename"
               onClick={() => {
                 setMenuOpen(false);
-                onRename(folder);
+                setShowRename(true);
               }}
             />
 
@@ -113,6 +118,18 @@ export default function FolderCard({ folder, onOpen, onDelete, onRename, onDownl
       <div className="truncate text-[13px] font-medium text-white/95 tracking-tight">
         {folder.name}
       </div>
+
+      {showRename && (
+        <RenameFolderModal
+          folder={folder}
+          onRename={(newName) => {
+            onRename(folder, newName);
+            setShowRename(false);
+          }}
+          onClose={() => setShowRename(false)}
+        />
+      )}
+
     </div>
   );
 }

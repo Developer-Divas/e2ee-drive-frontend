@@ -84,46 +84,48 @@ export default function Dashboard() {
     loadFolder(folder.id);
   }
 
-  async function handleDownload(file) {
-    const password = prompt("Enter encryption password");
-    if (!password) return;
-
+  async function handleDownload(file, password) {
+    if (!password) {
+      throw new Error("NO_PASSWORD");
+    }
+  
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/download/${currentFolderId ?? "root"}/${file.name}`,
-      { headers: { Authorization: `Bearer ${getToken()}` } }
+      {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      }
     );
-
+  
     const { url } = await res.json();
     const encryptedBlob = await fetch(url).then(r => r.blob());
-
+  
     if (!file.meta) {
-      alert("Encryption metadata missing. Cannot decrypt this file.");
-      return;
+      throw new Error("META_MISSING");
     }
-
+  
     const meta =
       typeof file.meta === "string"
         ? JSON.parse(file.meta)
         : file.meta;
-
+  
     try {
-      const decryptedBlob = await decryptFile(encryptedBlob, password, meta);
-
+      const decryptedBlob = await decryptFile(
+        encryptedBlob,
+        password,
+        meta
+      );
+  
       const a = document.createElement("a");
       a.href = URL.createObjectURL(decryptedBlob);
       a.download = meta.originalName;
       a.click();
-
-    } catch (err) {
-      if (err.message === "DECRYPT_FAILED") {
-        alert("❌ Wrong password. Please try again.");
-      } else {
-        alert("❌ Decryption failed due to an unexpected error.");
-      }
+  
+    } catch {
+      // 🔴 CRITICAL: throw so modal can react
+      throw new Error("WRONG_PASSWORD");
     }
-
   }
-
+  
 
   async function handleDelete(file) {
     await api.deleteFile(currentFolderId ?? "root", file.name);
@@ -143,33 +145,50 @@ export default function Dashboard() {
     return "." + parts.slice(-2).join(".");
   }
 
-  async function handleRename(file) {
-    const base = getBaseName(file.name);
-    const ext = getLockedExtension(file.name);
-
-    const input = prompt(
-      `Rename file (extension locked: ${ext})`,
-      base
+  async function handleRename(file, newName) {
+    if (!newName || newName === file.name) return;
+  
+    // 1️⃣ Optimistically update UI
+    setFiles(prev =>
+      prev.map(f =>
+        f.name === file.name
+          ? { ...f, name: newName }
+          : f
+      )
     );
-
-    if (!input) return;
-
-    const newName = input + ext;
-    await api.renameFile(currentFolderId ?? "root", file.name, newName);
-    loadFolder(currentFolderId);
-  }
-
+  
+    try {
+      // 2️⃣ Call backend
+      await api.renameFile(
+        currentFolderId ?? "root",
+        file.name,
+        newName
+      );
+    } catch (err) {
+      // 3️⃣ Rollback on failure (optional but recommended)
+      setFiles(prev =>
+        prev.map(f =>
+          f.name === newName
+            ? { ...f, name: file.name }
+            : f
+        )
+      );
+      alert("Rename failed. Please try again.");
+    }
+  }  
+  
+  
   async function handleFolderDelete(folder) {
     await api.deleteFolder(folder.id);
     loadFolder(currentFolderId);
   }
 
-  async function handleFolderRename(folder) {
-    const newName = prompt("Enter folder name:", folder.name);
-    if (!newName) return;
+  async function handleFolderRename(folder, newName) {
+    if (!newName || newName === folder.name) return;
+  
     await api.renameFolder(folder.id, newName);
     loadFolder(currentFolderId);
-  }
+  }  
 
   async function handleFolderDownload(folder) {
     await api.downloadFolder(folder.id);
