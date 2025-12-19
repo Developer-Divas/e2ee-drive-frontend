@@ -194,34 +194,22 @@ export default function Dashboard() {
     await api.downloadFolder(folder.id);
   }
 
-  async function uploadFile(file) {
-    try {
-      const password = prompt("Set encryption password");
-      if (!password) return;
+  async function uploadFile(file, password) {
+    if (!password) return;
+  
+    const { encryptedBlob, meta } = await encryptFile(file, password);
 
-      const { encryptedBlob, meta } = await encryptFile(file, password);
-
-      const encryptedFile = new File(
-        [encryptedBlob],
-        file.name + ".enc",
-        { type: "application/octet-stream" }
-      );
-
-      const form = new FormData();
-      form.append("file", encryptedFile);
-      form.append("folder_id", currentFolderId ?? "root");
-      form.append("meta", JSON.stringify(meta));
-
-      await api.uploadFile(form);
-
-      setShowUpload(false);
-      loadFolder(currentFolderId);
-    } catch (e) {
-      console.error("UPLOAD FAILED", e);
-    }
+    const encryptedName = file.name + ".enc";
+  
+    const form = new FormData();
+    form.append("file", encryptedBlob, encryptedName);
+    form.append("folder_id", currentFolderId ?? "root");
+    form.append("meta", JSON.stringify(meta));
+  
+    await api.uploadFile(form);
+    loadFolder(currentFolderId);
   }
-
-
+  
   return (
     <div className="pt-4">
 
