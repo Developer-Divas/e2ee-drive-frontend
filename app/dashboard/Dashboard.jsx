@@ -130,9 +130,31 @@ export default function Dashboard() {
     loadFolder(currentFolderId);
   }
 
+  function getBaseName(filename) {
+    const parts = filename.split(".");
+    if (parts.length <= 2) return parts[0];
+    // e.g. report.pdf.enc → ["report","pdf","enc"]
+    return parts.slice(0, parts.length - 2).join(".");
+  }
+
+  function getLockedExtension(filename) {
+    const parts = filename.split(".");
+    if (parts.length <= 2) return "." + parts.slice(1).join(".");
+    return "." + parts.slice(-2).join(".");
+  }
+
   async function handleRename(file) {
-    const newName = prompt("Enter new file name:", file.name);
-    if (!newName) return;
+    const base = getBaseName(file.name);
+    const ext = getLockedExtension(file.name);
+
+    const input = prompt(
+      `Rename file (extension locked: ${ext})`,
+      base
+    );
+
+    if (!input) return;
+
+    const newName = input + ext;
     await api.renameFile(currentFolderId ?? "root", file.name, newName);
     loadFolder(currentFolderId);
   }
