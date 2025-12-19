@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react";
 import GarimaModal from "./GarimaModal";
+import { Bot } from "lucide-react";
+
 
 export default function GarimaButton() {
   const [open, setOpen] = useState(false);
@@ -49,8 +51,8 @@ export default function GarimaButton() {
           animate-garima-breathe
         "
         title="Ask Garima"
-      >
-        G
+      > 
+        <Bot size={24} strokeWidth={1.8} />
       </button>
 
       {/* Modal */}
