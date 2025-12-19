@@ -43,7 +43,7 @@ export default function GarimaModal({ onClose }) {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-3 space-y-3">
           {messages.map((m, i) => (
-            <GarimaMessage key={i} role={m.role} text={m.text} />
+            <GarimaMessage key={i} role={m.role} text={m.text} details={m.details}/>
           ))}
 
           {loading && <GarimaTyping />}

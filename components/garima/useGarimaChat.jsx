@@ -47,7 +47,11 @@ export default function useGarimaChat() {
       // 4️⃣ Add Garima reply
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", text: data.answer }
+        {
+          role: "assistant",
+          text: data.answer,
+          details: data.details
+        }        
       ]);
 
     } catch (err) {
