@@ -34,34 +34,27 @@ body{
   @apply bg-surface border border-[rgba(255,255,255,0.04)] text-sm rounded-md px-3 py-2;
 }
 
-
 @keyframes garima-breathe {
   0% {
-    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.5);
+    transform: scale(1);
+    box-shadow: 
+      0 0 0 0 rgba(99, 102, 241, 0.7);
   }
+
   70% {
-    box-shadow: 0 0 0 14px rgba(99, 102, 241, 0);
+    transform: scale(1.06); /* 🔥 more visible */
+    box-shadow: 
+      0 0 0 20px rgba(99, 102, 241, 0); /* 🔥 bigger pulse */
   }
+
   100% {
-    box-shadow: 0 0 0 0 rgba(99, 102, 241, 0);
+    transform: scale(1);
+    box-shadow: 
+      0 0 0 0 rgba(99, 102, 241, 0);
   }
 }
 
 .animate-garima-breathe {
-  animation: garima-breathe 3.8s infinite;
+  animation: garima-breathe 3.8s ease-out infinite;
 }
 
-@keyframes garima-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-garima-fade-in {
-  animation: garima-fade-in 0.4s ease-out;
-}
