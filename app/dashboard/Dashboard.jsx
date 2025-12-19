@@ -11,6 +11,7 @@ import FileCard from '@/components/FileCard';
 
 import { encryptFile, decryptFile } from "@/lib/crypto";
 import { getToken } from "@/lib/auth";
+import GarimaButton from '@/components/garima/GarimaButton';
 
 
 export default function Dashboard() {
@@ -88,44 +89,44 @@ export default function Dashboard() {
     if (!password) {
       throw new Error("NO_PASSWORD");
     }
-  
+
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/download/${currentFolderId ?? "root"}/${file.name}`,
       {
         headers: { Authorization: `Bearer ${getToken()}` }
       }
     );
-  
+
     const { url } = await res.json();
     const encryptedBlob = await fetch(url).then(r => r.blob());
-  
+
     if (!file.meta) {
       throw new Error("META_MISSING");
     }
-  
+
     const meta =
       typeof file.meta === "string"
         ? JSON.parse(file.meta)
         : file.meta;
-  
+
     try {
       const decryptedBlob = await decryptFile(
         encryptedBlob,
         password,
         meta
       );
-  
+
       const a = document.createElement("a");
       a.href = URL.createObjectURL(decryptedBlob);
       a.download = meta.originalName;
       a.click();
-  
+
     } catch {
       // 🔴 CRITICAL: throw so modal can react
       throw new Error("WRONG_PASSWORD");
     }
   }
-  
+
 
   async function handleDelete(file) {
     await api.deleteFile(currentFolderId ?? "root", file.name);
@@ -147,7 +148,7 @@ export default function Dashboard() {
 
   async function handleRename(file, newName) {
     if (!newName || newName === file.name) return;
-  
+
     // 1️⃣ Optimistically update UI
     setFiles(prev =>
       prev.map(f =>
@@ -156,7 +157,7 @@ export default function Dashboard() {
           : f
       )
     );
-  
+
     try {
       // 2️⃣ Call backend
       await api.renameFile(
@@ -175,9 +176,9 @@ export default function Dashboard() {
       );
       alert("Rename failed. Please try again.");
     }
-  }  
-  
-  
+  }
+
+
   async function handleFolderDelete(folder) {
     await api.deleteFolder(folder.id);
     loadFolder(currentFolderId);
@@ -185,10 +186,10 @@ export default function Dashboard() {
 
   async function handleFolderRename(folder, newName) {
     if (!newName || newName === folder.name) return;
-  
+
     await api.renameFolder(folder.id, newName);
     loadFolder(currentFolderId);
-  }  
+  }
 
   async function handleFolderDownload(folder) {
     await api.downloadFolder(folder.id);
@@ -196,20 +197,20 @@ export default function Dashboard() {
 
   async function uploadFile(file, password) {
     if (!password) return;
-  
+
     const { encryptedBlob, meta } = await encryptFile(file, password);
 
     const encryptedName = file.name + ".enc";
-  
+
     const form = new FormData();
     form.append("file", encryptedBlob, encryptedName);
     form.append("folder_id", currentFolderId ?? "root");
     form.append("meta", JSON.stringify(meta));
-  
+
     await api.uploadFile(form);
     loadFolder(currentFolderId);
   }
-  
+
   return (
     <div className="pt-4">
 
@@ -266,6 +267,9 @@ export default function Dashboard() {
           onClose={() => setShowUpload(false)}
         />
       )}
+
+      {/* GARIMA */}
+      <GarimaButton />
     </div>
   );
 }
