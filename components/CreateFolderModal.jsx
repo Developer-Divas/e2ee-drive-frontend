@@ -11,7 +11,7 @@ export default function CreateFolderModal({ onCreate, onClose }) {
         <input className="input w-full mb-3" value={name} onChange={(e) => setName(e.target.value)} placeholder="Folder name" />
         <div className="flex justify-end gap-2">
           <button className="btn" onClick={onClose}>Cancel</button>
-          <button className="btn bg-accent text-black" onClick={() => { if(name.trim()) { onCreate(name.trim()); setName(''); } }}>Create</button>
+          <button className="btn" onClick={() => { if(name.trim()) { onCreate(name.trim()); setName(''); } }}>Create</button>
         </div>
       </div>
     </div>
