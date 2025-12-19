@@ -2,18 +2,31 @@
 
 import { useState, useRef, useEffect } from "react";
 import PopupPortal from "./PopupPortal";
+import Portal from "./Portal";
+
 import { getFileIcon } from "./FileIcons";
 import { MoreVertical, Download, Trash2, Pencil } from "lucide-react";
 
+import EncryptionProofModal from "./EncryptionProofModal";
+import RenameFileModal from "./RenameFileModal";
+import DecryptPasswordModal from "./DecryptPasswordModal";
+
 export default function FileCard({ file, onOpen, onDownload, onDelete, onRename }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+  const Icon = getFileIcon(file.name);
 
   const btnRef = useRef(null);
   const menuRef = useRef(null);
-  const Icon = getFileIcon(file.name);
 
-  // Close menu only when clicking outside BOTH button AND menu
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuPos, setMenuPos] = useState({ top: 0, left: 0 });
+
+  const [showProof, setShowProof] = useState(false);
+  const [showRename, setShowRename] = useState(false);
+
+  const [showDecrypt, setShowDecrypt] = useState(false);
+  const [decryptError, setDecryptError] = useState(false);
+
+  /* ---------------- outside click close ---------------- */
   useEffect(() => {
     function handleClick(e) {
       if (
@@ -27,11 +40,10 @@ export default function FileCard({ file, onOpen, onDownload, onDelete, onRename 
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
-  // Position popup
+  /* ---------------- menu position ---------------- */
   useEffect(() => {
     if (menuOpen && btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
-
       setMenuPos({
         top: rect.bottom + 6,
         left: rect.right - 140
@@ -63,7 +75,7 @@ export default function FileCard({ file, onOpen, onDownload, onDelete, onRename 
         <MoreVertical size={16} />
       </button>
 
-      {/* MENU PORTAL */}
+      {/* MENU */}
       {menuOpen && (
         <PopupPortal>
           <div
@@ -75,17 +87,14 @@ export default function FileCard({ file, onOpen, onDownload, onDelete, onRename 
               rounded-md shadow-xl
               w-32 py-2
             "
-            style={{
-              top: menuPos.top,
-              left: menuPos.left
-            }}
+            style={{ top: menuPos.top, left: menuPos.left }}
           >
             <MenuItem
               label="Rename"
               icon={<Pencil size={12} />}
               onClick={() => {
                 setMenuOpen(false);
-                onRename(file);
+                setShowRename(true);
               }}
             />
 
@@ -94,7 +103,8 @@ export default function FileCard({ file, onOpen, onDownload, onDelete, onRename 
               icon={<Download size={12} />}
               onClick={() => {
                 setMenuOpen(false);
-                onDownload(file);
+                setDecryptError(false);
+                setShowDecrypt(true);
               }}
             />
 
@@ -115,18 +125,69 @@ export default function FileCard({ file, onOpen, onDownload, onDelete, onRename 
       <Icon size={28} className="text-white/90 mb-2" />
 
       {/* FILE NAME */}
-      <div className="truncate text-[12px] font-medium text-white/95 tracking-tight">
-        {file.name}
+      <div className="flex items-center gap-1 text-sm min-w-0">
+        <span
+          className="truncate cursor-default"
+          title={file.name}
+        >
+          {file.name}
+        </span>
       </div>
+
+      {/* ENCRYPTION ICON */}
+      {file.meta && (
+        <>
+          <span
+            onClick={() => setShowProof(true)}
+            className="absolute bottom-2 right-2 cursor-pointer text-gray-400"
+            title="View encryption proof"
+          >
+            🔐
+          </span>
+
+          {showProof && (
+            <EncryptionProofModal onClose={() => setShowProof(false)} />
+          )}
+        </>
+      )}
 
       {/* FILE SIZE */}
       <div className="text-[10px] text-white/50">
         {formatSize(file.size)}
       </div>
+
+      {/* ---------- RENAME MODAL ---------- */}
+      {showRename && (
+        <RenameFileModal
+          file={file}
+          onRename={(newName) => {
+            onRename(file, newName);
+            setShowRename(false);
+          }}
+          onClose={() => setShowRename(false)}
+        />
+      )}
+
+      {/* ---------- DOWNLOAD / DECRYPT MODAL ---------- */}
+      {showDecrypt && (
+        <DecryptPasswordModal
+          error={decryptError}
+          onClose={() => setShowDecrypt(false)}
+          onSubmit={async (password) => {
+            try {
+              await onDownload(file, password);
+              setShowDecrypt(false);
+            } catch {
+              setDecryptError(true);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
 
+/* ---------------- MENU ITEM ---------------- */
 function MenuItem({ icon, label, onClick, className = "" }) {
   return (
     <button
@@ -144,6 +205,7 @@ function MenuItem({ icon, label, onClick, className = "" }) {
   );
 }
 
+/* ---------------- FILE SIZE ---------------- */
 function formatSize(bytes) {
   if (!bytes) return "0 KB";
   if (bytes < 1024) return bytes + " B";

@@ -84,103 +84,132 @@ export default function Dashboard() {
     loadFolder(folder.id);
   }
 
-  async function handleDownload(file) {
-    const password = prompt("Enter encryption password");
-    if (!password) return;
-
+  async function handleDownload(file, password) {
+    if (!password) {
+      throw new Error("NO_PASSWORD");
+    }
+  
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_API_URL}/download/${currentFolderId ?? "root"}/${file.name}`,
-      { headers: { Authorization: `Bearer ${getToken()}` } }
+      {
+        headers: { Authorization: `Bearer ${getToken()}` }
+      }
     );
-
+  
     const { url } = await res.json();
     const encryptedBlob = await fetch(url).then(r => r.blob());
-
+  
     if (!file.meta) {
-      alert("Encryption metadata missing. Cannot decrypt this file.");
-      return;
+      throw new Error("META_MISSING");
     }
-
+  
     const meta =
       typeof file.meta === "string"
         ? JSON.parse(file.meta)
         : file.meta;
-
+  
     try {
-      const decryptedBlob = await decryptFile(encryptedBlob, password, meta);
-
+      const decryptedBlob = await decryptFile(
+        encryptedBlob,
+        password,
+        meta
+      );
+  
       const a = document.createElement("a");
       a.href = URL.createObjectURL(decryptedBlob);
       a.download = meta.originalName;
       a.click();
-
-    } catch (err) {
-      if (err.message === "DECRYPT_FAILED") {
-        alert("❌ Wrong password. Please try again.");
-      } else {
-        alert("❌ Decryption failed due to an unexpected error.");
-      }
+  
+    } catch {
+      // 🔴 CRITICAL: throw so modal can react
+      throw new Error("WRONG_PASSWORD");
     }
-
   }
-
+  
 
   async function handleDelete(file) {
     await api.deleteFile(currentFolderId ?? "root", file.name);
     loadFolder(currentFolderId);
   }
 
-  async function handleRename(file) {
-    const newName = prompt("Enter new file name:", file.name);
-    if (!newName) return;
-    await api.renameFile(currentFolderId ?? "root", file.name, newName);
-    loadFolder(currentFolderId);
+  function getBaseName(filename) {
+    const parts = filename.split(".");
+    if (parts.length <= 2) return parts[0];
+    // e.g. report.pdf.enc → ["report","pdf","enc"]
+    return parts.slice(0, parts.length - 2).join(".");
   }
 
+  function getLockedExtension(filename) {
+    const parts = filename.split(".");
+    if (parts.length <= 2) return "." + parts.slice(1).join(".");
+    return "." + parts.slice(-2).join(".");
+  }
+
+  async function handleRename(file, newName) {
+    if (!newName || newName === file.name) return;
+  
+    // 1️⃣ Optimistically update UI
+    setFiles(prev =>
+      prev.map(f =>
+        f.name === file.name
+          ? { ...f, name: newName }
+          : f
+      )
+    );
+  
+    try {
+      // 2️⃣ Call backend
+      await api.renameFile(
+        currentFolderId ?? "root",
+        file.name,
+        newName
+      );
+    } catch (err) {
+      // 3️⃣ Rollback on failure (optional but recommended)
+      setFiles(prev =>
+        prev.map(f =>
+          f.name === newName
+            ? { ...f, name: file.name }
+            : f
+        )
+      );
+      alert("Rename failed. Please try again.");
+    }
+  }  
+  
+  
   async function handleFolderDelete(folder) {
     await api.deleteFolder(folder.id);
     loadFolder(currentFolderId);
   }
 
-  async function handleFolderRename(folder) {
-    const newName = prompt("Enter folder name:", folder.name);
-    if (!newName) return;
+  async function handleFolderRename(folder, newName) {
+    if (!newName || newName === folder.name) return;
+  
     await api.renameFolder(folder.id, newName);
     loadFolder(currentFolderId);
-  }
+  }  
 
   async function handleFolderDownload(folder) {
     await api.downloadFolder(folder.id);
   }
 
-  async function uploadFile(file) {
-    try {
-      const password = prompt("Set encryption password");
-      if (!password) return;
+  async function uploadFile(file, password) {
+    if (!password) return;
+  
+    const { encryptedBlob, meta } = await encryptFile(file, password);
 
-      const { encryptedBlob, meta } = await encryptFile(file, password);
-
-      const encryptedFile = new File(
-        [encryptedBlob],
-        file.name + ".enc",
-        { type: "application/octet-stream" }
-      );
-
-      const form = new FormData();
-      form.append("file", encryptedFile);
-      form.append("folder_id", currentFolderId ?? "root");
-      form.append("meta", JSON.stringify(meta));
-
-      await api.uploadFile(form);
-
-      setShowUpload(false);
-      loadFolder(currentFolderId);
-    } catch (e) {
-      console.error("UPLOAD FAILED", e);
-    }
+    const encryptedName = file.name + ".enc";
+  
+    const form = new FormData();
+    form.append("file", encryptedBlob, encryptedName);
+    form.append("folder_id", currentFolderId ?? "root");
+    form.append("meta", JSON.stringify(meta));
+  
+    await api.uploadFile(form);
+    loadFolder(currentFolderId);
   }
-
-
+  
   return (
     <div className="pt-4">
 
