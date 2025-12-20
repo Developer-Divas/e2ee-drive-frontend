@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import useGarimaChat from "@/components/garima/useGarimaChat";
 import GarimaMessage from "./GarimaMessage";
 import GarimaTyping from "./GarimaTyping";
@@ -8,6 +8,13 @@ import GarimaTyping from "./GarimaTyping";
 export default function GarimaModal({ onClose }) {
   const { messages, loading, sendMessage } = useGarimaChat();
   const [input, setInput] = useState("");
+
+  const messagesEndRef = useRef(null);
+
+  // ✅ AUTO-SCROLL EFFECT (CORRECT PLACE)
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, loading]);
 
   return (
     <div
@@ -36,9 +43,13 @@ export default function GarimaModal({ onClose }) {
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-3 space-y-3">
           {messages.map((m, i) => (
-            <GarimaMessage key={i} role={m.role} text={m.text} />
+            <GarimaMessage key={i} role={m.role} text={m.text} details={m.details}/>
           ))}
+
           {loading && <GarimaTyping />}
+
+          {/* 👇 SCROLL ANCHOR */}
+          <div ref={messagesEndRef} />
         </div>
 
         {/* Input */}
@@ -48,7 +59,7 @@ export default function GarimaModal({ onClose }) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
+              if (e.key === "Enter" && input.trim()) {
                 sendMessage(input);
                 setInput("");
               }
@@ -63,6 +74,7 @@ export default function GarimaModal({ onClose }) {
           />
           <button
             onClick={() => {
+              if (!input.trim()) return;
               sendMessage(input);
               setInput("");
             }}

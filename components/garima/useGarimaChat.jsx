@@ -11,12 +11,13 @@ export default function useGarimaChat() {
       text: "Hi 👋 I’m Garima. Ask me anything about this E2EE Drive."
     }
   ]);
+
   const [loading, setLoading] = useState(false);
 
   async function sendMessage(text) {
     if (!text.trim()) return;
 
-    // push user message
+    // 1️⃣ Add user message instantly
     setMessages((prev) => [
       ...prev,
       { role: "user", text }
@@ -25,6 +26,7 @@ export default function useGarimaChat() {
     setLoading(true);
 
     try {
+      // 2️⃣ Ask backend (intent engine runs there)
       const res = await fetch(`${API}/chat/ask`, {
         method: "POST",
         headers: {
@@ -33,17 +35,25 @@ export default function useGarimaChat() {
         body: JSON.stringify({ question: text })
       });
 
-      if (!res.ok) throw new Error("Garima backend error");
+      if (!res.ok) {
+        throw new Error("Garima backend error");
+      }
 
       const data = await res.json();
 
-      // 👇 artificial thinking delay (IMPORTANT)
+      // 3️⃣ Artificial thinking delay (UX polish)
       await new Promise((r) => setTimeout(r, 600));
 
+      // 4️⃣ Add Garima reply
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", text: data.answer }
+        {
+          role: "assistant",
+          text: data.answer,
+          details: data.details
+        }        
       ]);
+
     } catch (err) {
       setMessages((prev) => [
         ...prev,
